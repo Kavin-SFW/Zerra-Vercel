@@ -83,12 +83,6 @@ const Index = () => {
             <Button variant="ghost" onClick={() => navigate("/auth")} className="text-white hover:bg-white/10">
               Sign In
             </Button>
-            <Button
-              onClick={() => navigate("/auth")}
-              className="bg-gradient-to-r from-[#00D4FF] to-[#6B46C1] hover:from-[#00D4FF]/90 hover:to-[#6B46C1]/90 text-white border-0"
-            >
-              Start Free Trial
-            </Button>
           </div>
         </div>
       </nav>
@@ -307,6 +301,45 @@ const Index = () => {
                 <h3 className="text-2xl font-bold mb-4">{pillar.title}</h3>
                 <p className="text-[#E5E7EB]/80 leading-relaxed">{pillar.description}</p>
                 <div className="mt-6 h-1 w-0 group-hover:w-full bg-gradient-to-r transition-all duration-500" style={{ background: `linear-gradient(to right, ${pillar.gradient.includes("00D4FF") ? "#00D4FF" : pillar.gradient.includes("6B46C1") ? "#6B46C1" : "#9333EA"}, transparent)` }}></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Industries Section */}
+      <section id="industries" className="relative py-32 bg-gradient-to-b from-[#0A0E27] to-[#0f1429]">
+        <div className="container mx-auto px-4">
+          <div
+            data-animate
+            id="industries-header"
+            className={`text-center mb-20 ${isVisible["industries-header"] ? "animate-fade-in-up" : "opacity-0"}`}
+          >
+            <h2 className="text-4xl md:text-6xl font-bold mb-4">
+              Built For Every <span className="bg-gradient-to-r from-[#00D4FF] to-[#6B46C1] bg-clip-text text-transparent">Industry</span>
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-6 max-w-6xl mx-auto">
+            {[
+              { icon: Factory, name: "Manufacturing", useCase: "Production optimization" },
+              { icon: ShoppingBag, name: "Retail", useCase: "Demand forecasting" },
+              { icon: Heart, name: "Healthcare", useCase: "Patient analytics" },
+              { icon: Building2, name: "Finance", useCase: "Risk analysis" },
+              { icon: Truck, name: "Logistics", useCase: "Route optimization" },
+            ].map((industry, i) => (
+              <div
+                key={i}
+                data-animate
+                id={`industry-${i}`}
+                className={`glass-card p-6 rounded-xl text-center hover:scale-105 transition-all cursor-pointer ${isVisible[`industry-${i}`] ? "animate-fade-in-up" : "opacity-0"}`}
+                style={{ animationDelay: `${i * 0.1}s` }}
+              >
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#00D4FF]/20 to-[#6B46C1]/20 mx-auto mb-4 flex items-center justify-center">
+                  <industry.icon className="text-[#00D4FF]" size={32} />
+                </div>
+                <h3 className="font-bold mb-2">{industry.name}</h3>
+                <p className="text-sm text-[#E5E7EB]/70">{industry.useCase}</p>
               </div>
             ))}
           </div>
@@ -587,45 +620,6 @@ const Index = () => {
                 <a href="#" className="text-[#00D4FF] text-sm mt-4 inline-block hover:underline">
                   Learn more →
                 </a>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Industries Section */}
-      <section id="industries" className="relative py-32 bg-gradient-to-b from-[#0A0E27] to-[#0f1429]">
-        <div className="container mx-auto px-4">
-          <div
-            data-animate
-            id="industries-header"
-            className={`text-center mb-20 ${isVisible["industries-header"] ? "animate-fade-in-up" : "opacity-0"}`}
-          >
-            <h2 className="text-4xl md:text-6xl font-bold mb-4">
-              Built For Every <span className="bg-gradient-to-r from-[#00D4FF] to-[#6B46C1] bg-clip-text text-transparent">Industry</span>
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-6 max-w-6xl mx-auto">
-            {[
-              { icon: Factory, name: "Manufacturing", useCase: "Production optimization" },
-              { icon: ShoppingBag, name: "Retail", useCase: "Demand forecasting" },
-              { icon: Heart, name: "Healthcare", useCase: "Patient analytics" },
-              { icon: Building2, name: "Finance", useCase: "Risk analysis" },
-              { icon: Truck, name: "Logistics", useCase: "Route optimization" },
-            ].map((industry, i) => (
-              <div
-                key={i}
-                data-animate
-                id={`industry-${i}`}
-                className={`glass-card p-6 rounded-xl text-center hover:scale-105 transition-all cursor-pointer ${isVisible[`industry-${i}`] ? "animate-fade-in-up" : "opacity-0"}`}
-                style={{ animationDelay: `${i * 0.1}s` }}
-              >
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#00D4FF]/20 to-[#6B46C1]/20 mx-auto mb-4 flex items-center justify-center">
-                  <industry.icon className="text-[#00D4FF]" size={32} />
-                </div>
-                <h3 className="font-bold mb-2">{industry.name}</h3>
-                <p className="text-sm text-[#E5E7EB]/70">{industry.useCase}</p>
               </div>
             ))}
           </div>
