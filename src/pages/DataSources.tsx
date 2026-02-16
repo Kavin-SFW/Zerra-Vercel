@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -86,7 +86,7 @@ const ALLOWED_FILE_TYPES = [
 ];
 
 const ALLOWED_FILE_EXTENSIONS = [".csv", ".xlsx", ".xls"];
-const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 const DataSources = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -884,20 +884,11 @@ const DataSources = () => {
                 ? "border-[#00D4FF] bg-[#00D4FF]/10"
                 : uploading
                 ? "border-[#00D4FF] bg-[#00D4FF]/5"
-                : "border-[#00D4FF]/30 hover:border-[#00D4FF]/50 cursor-pointer"
+                : "border-[#00D4FF]/30 hover:border-[#00D4FF]/50"
             }`}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
-            onClick={!uploading ? handleBrowseClick : undefined}
-            role="button"
-            tabIndex={uploading ? -1 : 0}
-            onKeyDown={(e) => {
-              if (!uploading && (e.key === "Enter" || e.key === " ")) {
-                e.preventDefault();
-                handleBrowseClick();
-              }
-            }}
           >
             <div className="flex flex-col items-center gap-4">
               {uploading
@@ -916,21 +907,31 @@ const DataSources = () => {
                 )
                 : (
                   <>
-                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#00D4FF]/20 to-[#6B46C1]/20 flex items-center justify-center">
+                    <button
+                      type="button"
+                      onClick={handleBrowseClick}
+                      className="w-16 h-16 rounded-full bg-gradient-to-br from-[#00D4FF]/20 to-[#6B46C1]/20 flex items-center justify-center cursor-pointer hover:from-[#00D4FF]/30 hover:to-[#6B46C1]/30 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#00D4FF] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0E27]"
+                      aria-label="Open file browser to upload"
+                    >
                       <Upload className="w-8 h-8 text-[#00D4FF]" />
-                    </div>
+                    </button>
                     <div>
                       <h3 className="text-xl font-bold text-white mb-2">
                         Upload Data Files
                       </h3>
                       <p className="text-[#E5E7EB]/70 mb-1">
                         Drag and drop Excel or CSV files, or{" "}
-                        <span className="text-[#00D4FF] hover:underline">
+                        <button
+                          type="button"
+                          onClick={handleBrowseClick}
+                          className="text-[#00D4FF] underline cursor-pointer bg-transparent border-none p-0 font-inherit text-inherit hover:bg-transparent hover:text-[#00D4FF] focus:outline-none focus-visible:ring-0 focus-visible:bg-transparent"
+                          aria-label="Click to browse and select files"
+                        >
                           click here to browse
-                        </span>
+                        </button>
                       </p>
                       <p className="text-sm text-[#E5E7EB]/50">
-                        Maximum file size: 100MB
+                        Maximum file size: 10MB
                       </p>
                     </div>
                   </>
@@ -983,48 +984,56 @@ const DataSources = () => {
 
         {/* Connected Sources */}
         <div>
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-4">
-              <h2 className="text-2xl font-bold text-white">
-                Connected Sources
-              </h2>
-              {filteredSources.length > 0 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    if (isSelectionMode) {
-                      cancelSelection();
-                    } else {
-                      setIsSelectionMode(true);
-                    }
-                  }}
-                  className={`text-sm ${
-                    isSelectionMode
-                      ? "text-[#00D4FF] bg-[#00D4FF]/10"
-                      : "text-[#E5E7EB]/70 hover:text-white"
-                  }`}
-                >
-                  {isSelectionMode
-                    ? (
-                      <>
-                        <X className="w-4 h-4 mr-1" />
-                        Cancel
-                      </>
-                    )
-                    : (
-                      <>
-                        <CheckSquare className="w-4 h-4 mr-1" />
-                        Select
-                      </>
-                    )}
-                </Button>
-              )}
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-2xl font-bold text-white">
+              Connected Sources
+            </h2>
+            <div className="relative w-64">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#E5E7EB]/50" />
+              <Input
+                type="text"
+                placeholder="Search sources..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="bg-white/5 border-white/20 text-white placeholder:text-[#E5E7EB]/40 focus:border-[#00D4FF] pl-10 rounded-lg"
+              />
             </div>
-            <div className="flex items-center gap-3">
-              {/* Selection Actions */}
+          </div>
+
+          {filteredSources.length > 0 && (
+            <div className="flex items-center gap-3 mb-6">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  if (isSelectionMode) {
+                    cancelSelection();
+                  } else {
+                    setIsSelectionMode(true);
+                  }
+                }}
+                className={`text-sm ${
+                  isSelectionMode
+                    ? "text-[#00D4FF] bg-[#00D4FF]/10"
+                    : "text-[#E5E7EB]/70 hover:text-white"
+                }`}
+              >
+                {isSelectionMode
+                  ? (
+                    <>
+                      <X className="w-4 h-4 mr-1" />
+                      Cancel
+                    </>
+                  )
+                  : (
+                    <>
+                      <CheckSquare className="w-4 h-4 mr-1" />
+                      Select
+                    </>
+                  )}
+              </Button>
               {isSelectionMode && (
-                <div className="flex items-center gap-2 mr-2">
+                <>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -1070,20 +1079,10 @@ const DataSources = () => {
                       Delete ({selectedSources.size})
                     </Button>
                   )}
-                </div>
+                </>
               )}
-              <div className="relative w-64">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#E5E7EB]/50" />
-                <Input
-                  type="text"
-                  placeholder="Search sources..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="bg-white/5 border-white/20 text-white placeholder:text-[#E5E7EB]/40 focus:border-[#00D4FF] pl-10 rounded-lg"
-                />
-              </div>
             </div>
-          </div>
+          )}
 
           <div className="space-y-4">
             {loading
@@ -1169,7 +1168,7 @@ const DataSources = () => {
                           </div>
                           <div className="flex items-center gap-4 text-sm text-[#E5E7EB]/70">
                             <span>{source.records}</span>
-                            <span>â€¢</span>
+                            <span className="text-[#E5E7EB]/50" aria-hidden="true">•</span>
                             <span>{source.lastSync}</span>
                           </div>
                         </div>
