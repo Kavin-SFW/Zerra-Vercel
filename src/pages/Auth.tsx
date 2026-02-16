@@ -6,13 +6,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { User, Session } from "@supabase/supabase-js";
-import { BarChart3, Sparkles, Mail, Lock, ArrowRight } from "lucide-react";
+import { BarChart3, Sparkles, Mail, Lock, ArrowRight, Eye, EyeOff } from "lucide-react";
 import LoggerService from "@/services/LoggerService";
+import { PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH, getPasswordStrength } from "@/lib/password-utils";
+
+const EMAIL_MAX_LENGTH = 254;
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
+  const [emailError, setEmailError] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -49,14 +54,48 @@ const Auth = () => {
     }
   }, [user, navigate]);
 
+  const handleEmailChange = (value: string) => {
+    const filtered = value.replace(/[^a-zA-Z0-9._%+\-@]/g, "").slice(0, EMAIL_MAX_LENGTH);
+    setEmail(filtered);
+    if (emailError) setEmailError("");
+  };
+
+  const validateEmailFormat = (): boolean => {
+    const trimmed = email.trim();
+    if (!trimmed) {
+      setEmailError("Email is required");
+      return false;
+    }
+    if (trimmed.length > EMAIL_MAX_LENGTH) {
+      setEmailError(`Email must be at most ${EMAIL_MAX_LENGTH} characters`);
+      return false;
+    }
+    const basicEmailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!basicEmailRegex.test(trimmed)) {
+      setEmailError("Please enter a valid email address");
+      return false;
+    }
+    setEmailError("");
+    return true;
+  };
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    setEmailError("");
+    if (!validateEmailFormat()) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+    if (password.length < PASSWORD_MIN_LENGTH || password.length > PASSWORD_MAX_LENGTH) {
+      toast.error(`Password must be between ${PASSWORD_MIN_LENGTH} and ${PASSWORD_MAX_LENGTH} characters`);
+      return;
+    }
     setLoading(true);
 
     try {
       if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({
-          email,
+          email: email.trim(),
           password,
         });
         if (error) throw error;
@@ -65,7 +104,7 @@ const Auth = () => {
       } else {
         const redirectUrl = `${window.location.origin}/`;
         const { error } = await supabase.auth.signUp({
-          email,
+          email: email.trim(),
           password,
           options: {
             emailRedirectTo: redirectUrl,
@@ -77,8 +116,20 @@ const Auth = () => {
         setIsLogin(true);
       }
     } catch (error) {
-      const errorMessage = (error as Error).message || "Authentication failed";
-      toast.error(errorMessage);
+      const err = error as Error;
+      const errorMessage = err.message || "Authentication failed";
+      const isInvalidCredentials =
+        isLogin &&
+        (errorMessage.toLowerCase().includes("invalid login credentials") ||
+          errorMessage.toLowerCase().includes("invalid_credentials") ||
+          errorMessage.toLowerCase().includes("email not confirmed"));
+      if (isInvalidCredentials) {
+        const friendlyMessage = "This email is not registered or password is incorrect. Please sign up if you don't have an account.";
+        setEmailError("This email is not registered or password is incorrect.");
+        toast.error(friendlyMessage);
+      } else {
+        toast.error(errorMessage);
+      }
       LoggerService.error('Auth', isLogin ? 'LOGIN_FAILED' : 'SIGNUP_FAILED', errorMessage, error, { email });
     } finally {
       setLoading(false);
@@ -147,12 +198,21 @@ const Auth = () => {
                   type="email"
                   placeholder="your@email.com"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => handleEmailChange(e.target.value)}
+                  maxLength={EMAIL_MAX_LENGTH}
                   required
-                  className="bg-white/5 border-white/20 text-white placeholder:text-[#E5E7EB]/40 focus:border-[#00D4FF] focus:ring-[#00D4FF]/20 h-12 rounded-lg backdrop-blur-sm transition-all"
+                  className={`bg-white/5 border-white/20 text-white placeholder:text-[#E5E7EB]/40 focus:border-[#00D4FF] focus:ring-[#00D4FF]/20 h-12 rounded-lg backdrop-blur-sm transition-all ${emailError ? "border-red-500/50 focus:ring-red-500/20" : ""}`}
                 />
                 <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-[#00D4FF]/0 via-[#00D4FF]/0 to-[#6B46C1]/0 opacity-0 hover:opacity-10 transition-opacity pointer-events-none"></div>
               </div>
+              {emailError && (
+                <p className="text-sm text-red-400" role="alert">
+                  {emailError}
+                </p>
+              )}
+              <p className="text-xs text-[#E5E7EB]/50">
+                Maximum {EMAIL_MAX_LENGTH} characters. Only letters, numbers, and @ . _ % + - allowed.
+              </p>
             </div>
 
             {/* Password Input */}
@@ -164,15 +224,52 @@ const Auth = () => {
               <div className="relative">
                 <Input
                   id="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value.slice(0, PASSWORD_MAX_LENGTH);
+                    setPassword(val);
+                  }}
+                  minLength={PASSWORD_MIN_LENGTH}
+                  maxLength={PASSWORD_MAX_LENGTH}
                   required
-                  className="bg-white/5 border-white/20 text-white placeholder:text-[#E5E7EB]/40 focus:border-[#00D4FF] focus:ring-[#00D4FF]/20 h-12 rounded-lg backdrop-blur-sm transition-all"
+                  className="bg-white/5 border-white/20 text-white placeholder:text-[#E5E7EB]/40 focus:border-[#00D4FF] focus:ring-[#00D4FF]/20 h-12 rounded-lg backdrop-blur-sm transition-all pr-11"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#E5E7EB]/60 hover:text-[#00D4FF] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#00D4FF] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0E27] rounded p-1"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
                 <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-[#00D4FF]/0 via-[#00D4FF]/0 to-[#6B46C1]/0 opacity-0 hover:opacity-10 transition-opacity pointer-events-none"></div>
               </div>
+              <p className="text-xs text-[#E5E7EB]/50">
+                Minimum {PASSWORD_MIN_LENGTH} characters, maximum {PASSWORD_MAX_LENGTH} characters.
+              </p>
+              {password.length > 0 && (
+                <div className="space-y-1.5">
+                  <div className="flex gap-1 h-1.5 rounded-full overflow-hidden bg-white/10">
+                    <div
+                      className={`h-full rounded-full transition-all duration-300 ${
+                        getPasswordStrength(password).level === "weak"
+                          ? "bg-red-400"
+                          : getPasswordStrength(password).level === "fair"
+                            ? "bg-amber-400"
+                            : getPasswordStrength(password).level === "good"
+                              ? "bg-[#00D4FF]"
+                              : "bg-green-400"
+                      }`}
+                      style={{ width: `${(getPasswordStrength(password).score / 4) * 100}%` }}
+                    />
+                  </div>
+                  <p className={`text-xs font-medium ${getPasswordStrength(password).color}`}>
+                    Password strength: {getPasswordStrength(password).label}
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Submit Button */}
