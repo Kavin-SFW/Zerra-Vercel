@@ -50,6 +50,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import * as XLSX from "xlsx";
+import { PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH, getPasswordStrength } from "@/lib/password-utils";
 
 interface LogEntry {
   id: string;
@@ -419,8 +420,8 @@ const Settings = () => {
       return;
     }
 
-    if (newPassword.length < 6) {
-      toast.error("Password must be at least 6 characters");
+    if (newPassword.length < PASSWORD_MIN_LENGTH || newPassword.length > PASSWORD_MAX_LENGTH) {
+      toast.error(`Password must be between ${PASSWORD_MIN_LENGTH} and ${PASSWORD_MAX_LENGTH} characters`);
       return;
     }
 
@@ -660,12 +661,16 @@ const Settings = () => {
                     id="email"
                     type="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^a-zA-Z0-9._%+\-@]/g, "").slice(0, 254);
+                      setEmail(val);
+                    }}
+                    maxLength={254}
                     className="bg-white/5 border-white/20 text-white"
                     placeholder="Enter your email"
                   />
                   <p className="text-sm text-[#E5E7EB]/50">
-                    Changing your email will require verification
+                    Changing your email will require verification. Maximum 254 characters. Only letters, numbers, and @ . _ % + - allowed.
                   </p>
                 </div>
 
@@ -736,7 +741,9 @@ const Settings = () => {
                         id="newPassword"
                         type={showPassword ? "text" : "password"}
                         value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
+                        onChange={(e) => setNewPassword(e.target.value.slice(0, PASSWORD_MAX_LENGTH))}
+                        minLength={PASSWORD_MIN_LENGTH}
+                        maxLength={PASSWORD_MAX_LENGTH}
                         className="bg-white/5 border-white/20 text-white pr-10"
                         placeholder="Enter new password"
                       />
@@ -750,17 +757,55 @@ const Settings = () => {
                           : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
+                    <p className="text-xs text-[#E5E7EB]/50">
+                      Minimum {PASSWORD_MIN_LENGTH} characters, maximum {PASSWORD_MAX_LENGTH} characters.
+                    </p>
+                    {newPassword.length > 0 && (
+                      <div className="space-y-1.5">
+                        <div className="flex gap-1 h-1.5 rounded-full overflow-hidden bg-white/10">
+                          <div
+                            className={`h-full rounded-full transition-all duration-300 ${
+                              getPasswordStrength(newPassword).level === "weak"
+                                ? "bg-red-400"
+                                : getPasswordStrength(newPassword).level === "fair"
+                                  ? "bg-amber-400"
+                                  : getPasswordStrength(newPassword).level === "good"
+                                    ? "bg-[#00D4FF]"
+                                    : "bg-green-400"
+                            }`}
+                            style={{ width: `${(getPasswordStrength(newPassword).score / 4) * 100}%` }}
+                          />
+                        </div>
+                        <p className={`text-xs font-medium ${getPasswordStrength(newPassword).color}`}>
+                          Password strength: {getPasswordStrength(newPassword).label}
+                        </p>
+                      </div>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="confirmPassword">Confirm Password</Label>
-                    <Input
-                      id="confirmPassword"
-                      type={showPassword ? "text" : "password"}
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="bg-white/5 border-white/20 text-white"
-                      placeholder="Confirm new password"
-                    />
+                    <div className="relative">
+                      <Input
+                        id="confirmPassword"
+                        type={showPassword ? "text" : "password"}
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value.slice(0, PASSWORD_MAX_LENGTH))}
+                        minLength={PASSWORD_MIN_LENGTH}
+                        maxLength={PASSWORD_MAX_LENGTH}
+                        className="bg-white/5 border-white/20 text-white pr-10"
+                        placeholder="Confirm new password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#E5E7EB]/50 hover:text-white focus:outline-none rounded p-1"
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                      >
+                        {showPassword
+                          ? <EyeOff className="w-4 h-4" />
+                          : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
                   </div>
                   <Button
                     onClick={handleChangePassword}
